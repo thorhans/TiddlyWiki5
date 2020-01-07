@@ -3,3 +3,7 @@ title: $:/core/macros/utils
 \define colour(colour)
 $colour$
 \end
+
+\define rem()
+\end
+<<rem ThH: Added macro ‘rem’.>>
