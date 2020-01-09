@@ -118,6 +118,52 @@ exports.parse = function() {
 		this.parser.skipWhitespace({treatNewlinesAsNonWhitespace: true});
 		var tree = this.parser.parseInlineRun(/(\r?\n)/mg);
 		lastListItem.children.push.apply(lastListItem.children,tree);
+
+    // ThH start
+    // 
+    // Lists now accept continuation lines.
+    // 
+    // TODO Also accept continuation paragraphs.
+    {
+      // Stupid JS can't look for a regexp at a fixed place, so match
+      // by hand.
+      var s = this.parser.source;
+
+      // Hm, ‘p’ never moves past the end of ‘s’, but I don't know why.
+      var p = this.parser.pos;
+      while(true) { 
+        if(s.charAt(p) == "\r") ++p;
+        if(s.charAt(p) == "\n") {
+          ++p; 
+        } else {
+          break; // not at Eol
+        }
+        if(s.charAt(p) == " " || s.charAt(p) == "\t") {
+          while(s.charAt(p) == " " || s.charAt(p) == "\t") ++p;
+        } else {
+          break; // next line is not indented
+        }
+        if(s.charAt(p) == "\r" || s.charAt(p) == "\n") {
+          break; // next line is empty
+        }
+        if("*#;:>".indexOf(s.charAt(p)) == -1) {
+          // Next line is a continuation line.
+
+          var space = {
+            type: "text", 
+            text: this.parser.source.substring(this.parser.pos, p-1)};
+            lastListItem.children.push.apply(lastListItem.children, [space]);
+          this.parser.skipWhitespace();
+
+          tree = this.parser.parseInlineRun(/(\r?\n)/mg);
+          lastListItem.children.push.apply(lastListItem.children,tree);
+            p = this.parser.pos;
+        } else { 
+          break; // Next line is a new list item.
+        }
+      }
+    } // ThH end
+
 		if(classes.length > 0) {
 			$tw.utils.addClassToParseTreeNode(lastListItem,classes.join(" "));
 		}
